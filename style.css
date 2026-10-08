@@ -1,0 +1,263 @@
+/* ===== 全局重置：清掉浏览器默认的边距，方便我们自己排版 ===== */
+* {
+  margin: 0;               /* 外边距清零：元素和外部的距离 */
+  padding: 0;              /* 内边距清零：元素内部和边框的距离 */
+  box-sizing: border-box;  /* 让"宽度"把边框和内边距也算进去，排版更好算 */
+}
+
+/* ===== 页面主体 ===== */
+body {
+  font-family: "Microsoft YaHei", "微软雅黑", sans-serif; /* 字体：优先微软雅黑，中文好看 */
+  min-height: 100vh;       /* 至少铺满一屏高（100vh=屏幕高度的100%） */
+  position: relative;      /* 设为"相对定位"，好让动画层能贴着它铺满 */
+  overflow-x: hidden;      /* 禁止左右滚动，防止动画元素把页面撑宽 */
+  color: #fff;             /* 默认文字白色 */
+  /* 默认背景：蓝色渐变（晴天色调），后面 JS 会根据天气换掉 */
+  background: linear-gradient(to bottom, #4a90e2, #7b68ee);
+  transition: background 1s ease; /* 背景切换时用1秒平滑过渡，不生硬 */
+}
+
+/* ===== 动画层：铺满整个屏幕，垫在最底层 ===== */
+#animation-layer {
+  position: fixed;         /* 固定定位：钉在屏幕上，不随滚动跑 */
+  top: 0; left: 0;         /* 从左上角(0,0)开始 */
+  width: 100%; height: 100%; /* 宽高都占满整屏 */
+  overflow: hidden;        /* 超出屏幕的动画元素藏起来 */
+  z-index: 0;              /* 层级设为0，垫在最底下 */
+  pointer-events: none;    /* 鼠标点击"穿透"它，不挡住上面的按钮 */
+}
+
+/* ===== 内容容器：浮在动画层上面 ===== */
+.container {
+  position: relative;      /* 相对定位，配合 z-index 生效 */
+  z-index: 1;              /* 层级1，比动画层(0)高，所以在上面 */
+  width: 100%;             /* 占满可用宽度 */
+  max-width: 500px;        /* 但最宽500像素，太宽不好看 */
+  margin: 0 auto;          /* 左右 auto 让容器水平居中 */
+  padding: 30px 15px;      /* 内部留白：上下30、左右15像素 */
+}
+
+/* ===== 大标题 ===== */
+h1 {
+  text-align: center;      /* 文字居中 */
+  margin-bottom: 20px;     /* 和下面隔开20像素 */
+  font-size: 26px;         /* 字号 */
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3); /* 文字阴影，让白字在浅背景上也清楚 */
+}
+
+/* ===== 搜索区：输入框+按钮并排一行 ===== */
+.search-box {
+  display: flex;           /* 弹性布局：让子元素排成一行 */
+  gap: 8px;                /* 子元素之间留8像素空隙 */
+  margin-bottom: 20px;     /* 和下面隔开 */
+}
+.search-box input {
+  flex: 1;                 /* 占满剩余宽度，把按钮挤到右边 */
+  padding: 12px 15px;      /* 内部留白 */
+  border: none;            /* 去掉边框 */
+  border-radius: 10px;     /* 圆角10像素 */
+  font-size: 16px;         /* 字号 */
+  outline: none;           /* 去掉点击时的蓝色外框 */
+}
+.search-box button {
+  padding: 12px 18px;      /* 内部留白 */
+  border: none;            /* 去边框 */
+  border-radius: 10px;     /* 圆角 */
+  background: #ff9500;     /* 橙色，醒目 */
+  color: #fff;             /* 白字 */
+  font-size: 16px;         /* 字号 */
+  cursor: pointer;         /* 鼠标变小手，提示可点 */
+  white-space: nowrap;     /* 文字不换行 */
+}
+.search-box button:hover {
+  background: #e68600;     /* 悬停时颜色加深，给反馈 */
+}
+
+/* ===== 消息提示（加载中/出错）===== */
+.message {
+  text-align: center;      /* 居中 */
+  padding: 15px;           /* 留白 */
+  font-size: 15px;         /* 字号 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3); /* 阴影，白字更清楚 */
+}
+
+/* ===== 大卡片：显示选中那天的详细天气 ===== */
+.card {
+  background: rgba(255,255,255,0.2);  /* 半透明白，能透出背景动画，有"毛玻璃"感 */
+  backdrop-filter: blur(8px);          /* 背景模糊，毛玻璃效果（部分浏览器支持） */
+  border: 1px solid rgba(255,255,255,0.3); /* 浅白描边，更精致 */
+  border-radius: 18px;     /* 大圆角 */
+  padding: 22px;           /* 内部留白 */
+  margin-bottom: 20px;     /* 和下面隔开 */
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2); /* 阴影，让卡片浮起来 */
+}
+.card .city-name {
+  font-size: 22px;         /* 城市名字号 */
+  font-weight: bold;       /* 加粗 */
+}
+.card .date {
+  font-size: 14px;         /* 日期字号小一点 */
+  opacity: 0.85;           /* 稍微透明，弱化 */
+  margin-bottom: 10px;     /* 和下面隔开 */
+}
+/* "大图标+温度+描述"横向排列那一行 */
+.card .current {
+  display: flex;           /* 横向排列 */
+  align-items: center;     /* 垂直居中 */
+  gap: 15px;               /* 元素间空隙 */
+  margin: 10px 0;          /* 上下留白 */
+}
+.card .current .icon { font-size: 56px; }   /* 天气大图标(emoji) */
+.card .current .temp { font-size: 44px; font-weight: bold; } /* 大温度数字 */
+.card .current .desc { font-size: 16px; opacity: 0.9; }      /* 天气描述文字 */
+
+/* 详细信息：排成两列的小格子 */
+.card .details {
+  display: grid;                   /* 网格布局 */
+  grid-template-columns: 1fr 1fr;  /* 平均分两列 */
+  gap: 10px;                       /* 格子间空隙 */
+  margin-top: 12px;                /* 和上面隔开 */
+}
+.card .details .item {
+  background: rgba(255,255,255,0.15); /* 半透明小底色 */
+  padding: 10px 12px;      /* 内部留白 */
+  border-radius: 10px;     /* 圆角 */
+  font-size: 14px;         /* 字号 */
+}
+.card .details .item b {
+  display: block;          /* 让数值独占一行，显示在标签下方 */
+  font-size: 17px;         /* 数值字号大一点 */
+  margin-top: 3px;         /* 和标签隔开一点 */
+}
+
+/* ===== 7 天预报标题 ===== */
+.forecast h3 {
+  margin-bottom: 10px;     /* 和下面隔开 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3); /* 阴影 */
+}
+
+/* ===== 7 天小卡片（横向一条）===== */
+.day {
+  background: rgba(255,255,255,0.2); /* 半透明白底 */
+  border: 1px solid rgba(255,255,255,0.25); /* 浅描边 */
+  border-radius: 12px;     /* 圆角 */
+  padding: 12px 15px;      /* 内部留白 */
+  margin-bottom: 8px;      /* 每条间隔 */
+  display: flex;           /* 横向排列 */
+  justify-content: space-between; /* 两端对齐：左日期右温度 */
+  align-items: center;     /* 垂直居中 */
+  cursor: pointer;         /* 鼠标变小手，提示"可以点我" */
+  transition: transform 0.2s, background 0.2s; /* 变化时平滑过渡 */
+}
+.day:hover {
+  background: rgba(255,255,255,0.35); /* 悬停时变亮一点 */
+  transform: translateX(4px);          /* 悬停时轻微右移，给"可点"反馈 */
+}
+/* 被选中那天的小卡片：加个高亮边框，让你知道现在看的是哪天 */
+.day.active {
+  background: rgba(255,255,255,0.4);   /* 更亮 */
+  border-color: #fff;                   /* 白色实边框突出 */
+}
+.day .day-left { display: flex; align-items: center; gap: 10px; } /* 左侧：图标+星期 */
+.day .day-icon { font-size: 28px; }    /* 小卡片的天气图标 */
+.day .day-temp { font-size: 16px; font-weight: bold; } /* 右侧温度 */
+
+/* ============================================================
+   天气动画部分
+   原理：JS 会给 <body> 加一个类名，比如 class="weather-rain"，
+   然后下面这些规则就按类名切换背景色和动画。
+   ============================================================ */
+
+/* ---- 不同天气的整页背景色（body 带不同类名时生效）---- */
+body.weather-clear  { background: linear-gradient(to bottom, #4a90e2, #7ec8f3); } /* 晴：明亮蓝 */
+body.weather-cloudy { background: linear-gradient(to bottom, #7b8ba3, #a9b5c9); } /* 多云：灰蓝 */
+body.weather-rain   { background: linear-gradient(to bottom, #4b5f7a, #6b7f99); } /* 雨：暗蓝灰 */
+body.weather-snow   { background: linear-gradient(to bottom, #8fa8c8, #cdd9e8); } /* 雪：冷白蓝 */
+body.weather-thunder{ background: linear-gradient(to bottom, #2c3340, #4a5568); } /* 雷：乌云深灰 */
+body.weather-fog    { background: linear-gradient(to bottom, #9aa5b1, #c3cad3); } /* 雾：灰白 */
+
+/* ---- 晴天：一个发光的太阳在角落缓慢旋转光芒 ---- */
+.sun {
+  position: absolute;      /* 绝对定位，自己摆放位置 */
+  top: 8%; right: 12%;     /* 放在右上角 */
+  width: 90px; height: 90px; /* 大小 */
+  border-radius: 50%;      /* 变成圆形（太阳本体）*/
+  background: #ffe259;     /* 暖黄色 */
+  box-shadow: 0 0 60px 20px rgba(255,226,89,0.7); /* 向外发光 */
+  animation: sun-pulse 4s ease-in-out infinite;   /* 用 sun-pulse 动画，4秒一轮，无限循环 */
+}
+/* 定义 sun-pulse 动画：光晕一大一小地呼吸 */
+@keyframes sun-pulse {
+  0%, 100% { box-shadow: 0 0 60px 20px rgba(255,226,89,0.6); } /* 开头和结尾：光晕小 */
+  50%      { box-shadow: 0 0 80px 35px rgba(255,226,89,0.9); } /* 中间：光晕大 */
+}
+
+/* ---- 云朵：白色椭圆，从左向右飘 ---- */
+.cloud {
+  position: absolute;      /* 绝对定位 */
+  width: 120px; height: 40px; /* 云的大小 */
+  background: rgba(255,255,255,0.8); /* 半透明白 */
+  border-radius: 50px;     /* 圆角做成椭圆 */
+  animation: cloud-move 25s linear infinite; /* 飘动动画，25秒横穿，匀速无限循环 */
+}
+/* 云朵上再叠两个小圆，让它更像蓬松的云 */
+.cloud::before, .cloud::after {
+  content: "";             /* 伪元素必须写 content 才会出现 */
+  position: absolute;      /* 相对云朵定位 */
+  background: inherit;     /* 颜色继承云朵的白 */
+  border-radius: 50%;      /* 圆形 */
+}
+.cloud::before { width: 55px; height: 55px; top: -22px; left: 18px; } /* 左边的鼓包 */
+.cloud::after  { width: 45px; height: 45px; top: -15px; left: 60px; } /* 右边的鼓包 */
+/* 定义 cloud-move 动画：从屏幕左边外飘到右边外 */
+@keyframes cloud-move {
+  from { transform: translateX(-150px); } /* 起点：屏幕左侧外 */
+  to   { transform: translateX(100vw);  } /* 终点：屏幕右侧外(100vw=整屏宽) */
+}
+
+/* ---- 雨丝：一根细长白条，从上往下快速落 ---- */
+.raindrop {
+  position: absolute;      /* 绝对定位，每根雨丝自己摆位置 */
+  top: -20px;              /* 起点在屏幕顶部上方一点 */
+  width: 2px;              /* 很细 */
+  height: 18px;            /* 细长条 */
+  background: linear-gradient(transparent, rgba(255,255,255,0.7)); /* 上淡下亮，像落下的水线 */
+  animation: rain-fall linear infinite; /* 下落动画，匀速无限循环（时长由JS随机设，更自然）*/
+}
+/* 定义 rain-fall：从顶部落到屏幕底部外 */
+@keyframes rain-fall {
+  to { transform: translateY(100vh); } /* 一直往下移动一整屏高 */
+}
+
+/* ---- 雪花：一个白色小圆点，边飘边落 ---- */
+.snowflake {
+  position: absolute;      /* 绝对定位 */
+  top: -10px;              /* 起点在顶部上方 */
+  width: 8px; height: 8px; /* 小圆点大小 */
+  background: #fff;        /* 白色 */
+  border-radius: 50%;      /* 圆形 */
+  opacity: 0.9;            /* 稍微透明 */
+  animation: snow-fall linear infinite; /* 飘落动画 */
+}
+/* 定义 snow-fall：一边往下落，一边左右摇摆 */
+@keyframes snow-fall {
+  0%   { transform: translateY(0) translateX(0); }       /* 起点 */
+  50%  { transform: translateY(50vh) translateX(30px); } /* 中途：落一半，往右飘 */
+  100% { transform: translateY(100vh) translateX(-10px);}/* 终点：落到底，往左飘 */
+}
+
+/* ---- 闪电：整屏白光偶尔闪一下 ---- */
+.lightning {
+  position: absolute;      /* 绝对定位 */
+  top: 0; left: 0;         /* 从左上角 */
+  width: 100%; height: 100%; /* 占满整屏 */
+  background: rgba(255,255,255,0.8); /* 白色强光 */
+  opacity: 0;              /* 默认完全透明（看不见）*/
+  animation: flash 6s infinite; /* 闪光动画，6秒一轮 */
+}
+/* 定义 flash：绝大部分时间不亮，偶尔极短暂地闪两下 */
+@keyframes flash {
+  0%, 92%, 96%, 100% { opacity: 0; }   /* 大部分时间：不亮 */
+  93%, 95%           { opacity: 0.9; } /* 93%和95%时刻：突然亮 */
+  94%                { opacity: 0.3; } /* 中间短暂暗一下，模拟闪电的两段闪 */
+}

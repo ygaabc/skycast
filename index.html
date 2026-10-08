@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!-- 告诉浏览器：这是标准 HTML5 网页，按最新规则显示 -->
+<html lang="zh-CN">
+<!-- 整个网页的"大盒子"；lang="zh-CN" 表示语言是简体中文 -->
+<head>
+  <!-- head 是"后台设置区"，放浏览器要知道、但用户看不到的信息 -->
+  <meta charset="UTF-8">
+  <!-- 文字编码用 UTF-8，中文才不会乱码（约定用同一套字典） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 让页面在手机上自适应屏幕宽度，不会挤成一团 -->
+  <title>SkyCast 天空播报</title>
+  <!-- 浏览器标签页上显示的标题 -->
+  <link rel="stylesheet" href="style.css">
+  <!-- 把长相文件 style.css 挂进来；rel="stylesheet" 表示"这是样式表" -->
+</head>
+<body>
+  <!-- body 是真正显示给用户看的主体区域 -->
+
+  <!-- 动画层：铺满整个屏幕的背景，天气动画（下雨/飘雪等）画在这里 -->
+  <!-- id="animation-layer" 是给它起个名字，方便 JS 和 CSS 找到它 -->
+  <div id="animation-layer"></div>
+
+  <!-- 内容容器：所有看得见的内容（标题、搜索、卡片）都装在这里，浮在动画层上面 -->
+  <div class="container">
+
+    <!-- 大标题 -->
+    <h1>🌤️ SkyCast 天空播报</h1>
+
+    <!-- 搜索区：一个输入框 + 搜索按钮 + 定位按钮，三个并排 -->
+    <div class="search-box">
+      <!-- 输入框：placeholder 是没输入时显示的灰色提示字 -->
+      <input type="text" id="city-input" placeholder="输入城市名，如 上海">
+      <!-- 搜索按钮；id 方便 JS 找到它、给它绑定"被点击时做什么" -->
+      <button id="search-btn">搜索</button>
+      <!-- 定位按钮；title 是鼠标悬停时的小提示 -->
+      <button id="locate-btn" title="定位我的位置">📍</button>
+    </div>
+
+    <!-- 消息提示区：加载中、出错了等文字显示在这里；默认是空的 -->
+    <div id="message" class="message"></div>
+
+    <!-- 当前选中那天的大卡片：显示城市名、大图标、温度、详细信息 -->
+    <!-- 默认先隐藏（style="display:none"），等拿到数据后 JS 再让它显示 -->
+    <div id="current-card" class="card" style="display:none"></div>
+
+    <!-- 7 天预报区 -->
+    <div class="forecast">
+      <h3 id="forecast-title" style="display:none">未来 7 天</h3>
+      <!-- 7 张小卡片会由 JS 动态生成后，塞进这个容器里 -->
+      <div id="forecast-list"></div>
+    </div>
+
+  </div>
+
+  <!-- 把逻辑文件 app.js 挂进来；放在 body 最底部，是为了等上面的页面元素都加载好了，JS 才开始运行，避免找不到元素 -->
+  <script src="app.js"></script>
+</body>
+</html>
